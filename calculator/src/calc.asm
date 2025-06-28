@@ -4,13 +4,17 @@ SYS_WRITE equ 4
 section .data
 msg: db "Please enter a number: "
 msg_len: equ $-msg
-op_msg: db "Choose one operation: +, -, *, /", 10
+op_msg: db "Choose one operation: +, -, *, / "
 op_len: equ $-op_msg
+second_msg: db "Please enter another number: "
+second_len: equ $-second_msg
 
 section .bss
 buffer: resb 4
 buffer_len: resd 1
 num: resb 4
+op_buffer: resb 1
+opb_len: resb 1
 
 section .text
 global _start
@@ -20,17 +24,43 @@ _start:
   call write_msg
   add esp, 8
 
+  push buffer_len
+  push buffer
   call read_input
+  add esp, 8
 
   call to_integer
-  mov num, eax
+  mov [num], eax
   xor eax, eax
   call clear_buffer
 
   push op_len
   push op_msg
   call write_msg
- 
+  add esp, 8
+  
+  push opb_len
+  push op_buffer
+  call read_input
+  add esp, 8
+
+  push second_len
+  push second_msg
+  call write_msg
+  add esp, 8
+
+  push buffer_len
+  push buffer
+  call read_input
+  add esp, 8
+
+  ;call to_integer
+
+ ; push buffer_len
+ ; push buffer
+ ; call write_msg
+ ; add esp, 8
+   
   mov eax, 1
   xor ebx, ebx
   int 0x80
@@ -45,7 +75,7 @@ clear_buffer:
     jnz .loop
   ret
 
-jump_if_equal:
+;jump_if_equal:
   
 
 write_msg:
@@ -61,11 +91,15 @@ write_msg:
   ret
 
 read_input:
-  mov edx, buffer_len
-  mov ecx, buffer
+  push ebp
+  mov ebp, esp
+  mov edx, [ebp + 12]
+  mov ecx, [ebp + 8]
   mov ebx, 0
   mov eax, SYS_READ
   int 0x80
+  mov esp, ebp
+  pop ebp
   ret
   
 to_integer:

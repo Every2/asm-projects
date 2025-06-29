@@ -8,13 +8,14 @@ op_msg: db "Choose one operation: +, -, *, / "
 op_len: equ $-op_msg
 second_msg: db "Please enter another number: "
 second_len: equ $-second_msg
+buffer_len: equ 4
+opb_len: equ 2
 
 section .bss
 buffer: resb 4
-buffer_len: resd 1
 num: resb 4
-op_buffer: resb 1
-opb_len: resb 1
+op_buffer: resb 2
+num2: resb 4
 
 section .text
 global _start
@@ -54,13 +55,11 @@ _start:
   call read_input
   add esp, 8
 
-  ;call to_integer
+  call to_integer
+  mov [num2], eax
+  xor eax, eax
+  call clear_buffer
 
- ; push buffer_len
- ; push buffer
- ; call write_msg
- ; add esp, 8
-   
   mov eax, 1
   xor ebx, ebx
   int 0x80

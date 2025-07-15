@@ -10,12 +10,16 @@ second_msg: db "Please enter another number: "
 second_len: equ $-second_msg
 buffer_len: equ 4
 opb_len: equ 2
+result_len: equ 4
+error: db "Invalid operator.", 10
+error_len: equ $-error
 
 section .bss
 buffer: resb 4
 num: resb 4
 op_buffer: resb 2
 num2: resb 4
+result: resb 4
 
 section .text
 global _start
@@ -60,9 +64,56 @@ _start:
   xor eax, eax
   call clear_buffer
 
-  mov eax, 1
-  xor ebx, ebx
-  int 0x80
+  cmp byte [op_buffer], '+'
+  je .sum_op
+  cmp byte [op_buffer], '-'
+  je .less_op
+  cmp byte [op_buffer], '*'
+  je .times_op
+  cmp byte [op_buffer], '/'
+  je .div_op
+  jmp .error_case
+
+  .sum_op:
+    mov eax, [num]
+    add eax, [num2]
+    mov [result], eax
+    jmp .done
+
+  .less_op:
+    mov eax, [num]
+    sub eax, [num2]
+    mov [result], eax
+    jmp .done
+
+  .times_op:
+    mov eax, [num]
+    imul eax, [num2]
+    mov [result], eax
+    jmp .done
+
+  .div_op:
+    mov eax, [num]
+    mov ecx, [num2]
+    xor edx, edx
+    div ecx
+    mov [result], eax
+    jmp .done
+
+  .error_case:
+    push error_len
+    push error
+    call write_msg
+    add esp, 8
+    xor eax, eax
+    mov eax, 1
+    xor ebx, ebx
+    int 0x80
+    
+  .done:    
+    mov eax, 1
+    xor ebx, ebx
+    int 0x80
 
 clear_buffer:
   mov ecx, 1
@@ -73,9 +124,6 @@ clear_buffer:
     dec ecx
     jnz .loop
   ret
-
-;jump_if_equal:
-  
 
 write_msg:
   push ebp

@@ -13,13 +13,17 @@ opb_len: equ 2
 result_len: equ 4
 error: db "Invalid operator.", 10
 error_len: equ $-error
+string_len: equ 4
+buffer2_len: equ 4
 
 section .bss
 buffer: resb 4
+buffer2: resb 4
 num: resb 4
 op_buffer: resb 2
 num2: resb 4
 result: resb 4
+string_buffer: resb 4
 
 section .text
 global _start
@@ -37,7 +41,6 @@ _start:
   call to_integer
   mov [num], eax
   xor eax, eax
-  call clear_buffer
 
   push op_len
   push op_msg
@@ -54,15 +57,14 @@ _start:
   call write_msg
   add esp, 8
 
-  push buffer_len
-  push buffer
+  push buffer2_len
+  push buffer2
   call read_input
   add esp, 8
 
   call to_integer
   mov [num2], eax
   xor eax, eax
-  call clear_buffer
 
   cmp byte [op_buffer], '+'
   je .sum_op
@@ -78,6 +80,14 @@ _start:
     mov eax, [num]
     add eax, [num2]
     mov [result], eax
+    push string_len
+    push string_buffer
+    call to_string
+    add esp, 8
+    push string_len
+    push string_buffer
+    call write_msg
+    add esp, 8
     jmp .done
 
   .less_op:
@@ -112,7 +122,7 @@ _start:
     
   .done:    
     mov eax, 1
-    xor ebx, ebx
+    mov ebx, [num]
     int 0x80
 
 clear_buffer:
@@ -172,3 +182,26 @@ to_integer:
    
    .done:
      ret
+
+to_string:
+     push ebp
+     mov ebp, esp
+     mov edi, [ebp + 8]
+     mov ebx, [ebp + 12] 	
+     mov eax, [result]
+     xor ecx, ecx
+   .loop:
+     mov esi, 10
+     xor edx, edx
+     div esi
+     add edx, '0'
+     push edx
+     inc ecx
+     cmp eax, 0
+     jne .loop
+   .loop2:
+     pop eax
+     mov [edi], al
+     loop .loop2
+     pop ebp
+     ret     
